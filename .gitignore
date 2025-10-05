@@ -60,7 +60,8 @@ models/
 
 # OSM2World specific
 osm2world/
-*.jar
+OSM2World-*.zip
+OSM2World-*.tar.gz
 
 # Gazebo temporary files
 .gazebo/
