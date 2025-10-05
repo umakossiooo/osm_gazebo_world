@@ -1,0 +1,290 @@
+#!/usr/bin/env python3
+import argparse
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+try:
+    from colorama import Fore, Style, init as colorama_init
+except Exception:  # pragma: no cover - color is optional
+    class _Dummy:
+        def __getattr__(self, name):
+            return ""
+
+    def colorama_init(*_args, **_kwargs):
+        return None
+
+    Fore = Style = _Dummy()  # type: ignore
+
+
+def print_info(message: str) -> None:
+    print(f"{Fore.CYAN}[INFO]{Style.RESET_ALL} {message}")
+
+
+def print_success(message: str) -> None:
+    print(f"{Fore.GREEN}[OK]{Style.RESET_ALL} {message}")
+
+
+def print_warn(message: str) -> None:
+    print(f"{Fore.YELLOW}[WARN]{Style.RESET_ALL} {message}")
+
+
+def print_error(message: str) -> None:
+    print(f"{Fore.RED}[ERROR]{Style.RESET_ALL} {message}", file=sys.stderr)
+
+
+def ensure_osm2world_path() -> Path:
+    # Default install path inside the container
+    default_path = Path("/opt/osm2world/OSM2World.jar")
+    env_path = Path(os.environ.get("OSM2WORLD_JAR", default_path.as_posix()))
+    if env_path.exists():
+        return env_path
+    # Debian/Ubuntu package path
+    deb_path = Path("/usr/share/osm2world/OSM2World.jar")
+    if deb_path.exists():
+        return deb_path
+    # Fallback: try local project dir
+    local_path = Path("OSM2World.jar")
+    if local_path.exists():
+        return local_path
+    raise FileNotFoundError(
+        "OSM2World.jar not found. Ensure it exists at /opt/osm2world/OSM2World.jar or set OSM2WORLD_JAR."
+    )
+
+
+def run_osm2world(osm_path: Path, out_mesh_path: Path) -> None:
+    osm2world_jar = ensure_osm2world_path()
+    lib_dir = osm2world_jar.parent / "lib"
+    
+    # Build classpath with all JAR files
+    classpath_parts = [osm2world_jar.as_posix()]
+    if lib_dir.exists():
+        classpath_parts.extend([jar.as_posix() for jar in lib_dir.glob("*.jar")])
+    classpath = ":".join(classpath_parts)
+    
+    java_cmd = [
+        "java",
+        "-cp",
+        classpath,
+        "org.osm2world.console.OSM2World",
+        "-i",
+        osm_path.as_posix(),
+        "-o",
+        out_mesh_path.as_posix(),
+    ]
+    print_info("Running OSM2World to generate mesh (this may take a while)...")
+    try:
+        subprocess.run(java_cmd, check=True)
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            "Java runtime not found. Ensure Java is installed inside the container."
+        ) from exc
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(
+            f"OSM2World failed with exit code {exc.returncode}. Check your .osm file."
+        ) from exc
+
+
+def write_world_file(
+    world_path: Path,
+    relative_mesh_uri: str,
+    scale: float,
+) -> None:
+    # SDF world with built-in ground plane, sun, and a static model referencing the OBJ mesh
+    content = f"""
+<sdf version="1.7">
+  <world name="osm_world">
+    <!-- Physics -->
+    <physics name="default_physics" default="0" type="ode">
+      <gravity>0 0 -9.8066</gravity>
+      <ode>
+        <solver>
+          <type>quick</type>
+          <iters>10</iters>
+          <sor>1.3</sor>
+        </solver>
+        <constraints>
+          <cfm>0</cfm>
+          <erp>0.2</erp>
+          <contact_max_correcting_vel>100</contact_max_correcting_vel>
+          <contact_surface_layer>0.001</contact_surface_layer>
+        </constraints>
+      </ode>
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+    </physics>
+
+    <!-- Scene -->
+    <scene>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0.7 0.7 0.7 1</background>
+      <shadows>1</shadows>
+    </scene>
+
+    <!-- Lighting -->
+    <light type="directional" name="sun">
+      <cast_shadows>1</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- Ground Plane -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <surface>
+            <contact>
+              <collide_bitmask>65535</collide_bitmask>
+              <ode/>
+            </contact>
+            <friction>
+              <ode>
+                <mu>100</mu>
+                <mu2>50</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <cast_shadows>false</cast_shadows>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Grey</name>
+            </script>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- OSM Environment Model -->
+    <model name="osm_environment">
+      <static>true</static>
+      <link name="osm_mesh_link">
+        <visual name="osm_visual">
+          <geometry>
+            <mesh>
+              <uri>{relative_mesh_uri}</uri>
+              <scale>{scale} {scale} {scale}</scale>
+            </mesh>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/White</name>
+            </script>
+          </material>
+        </visual>
+        <collision name="osm_collision">
+          <geometry>
+            <mesh>
+              <uri>{relative_mesh_uri}</uri>
+              <scale>{scale} {scale} {scale}</scale>
+            </mesh>
+          </geometry>
+        </collision>
+      </link>
+    </model>
+  </world>
+</sdf>
+""".strip()
+    world_path.write_text(content)
+
+
+def convert(osm_file: Path, output_world: Path, scale: float) -> None:
+    if not osm_file.exists():
+        raise FileNotFoundError(f"Input file not found: {osm_file}")
+
+    output_world = output_world.with_suffix(".world")
+    output_dir = output_world.parent
+    meshes_dir = output_dir / "meshes"
+    meshes_dir.mkdir(parents=True, exist_ok=True)
+
+    base = output_world.stem
+    mesh_path = meshes_dir / f"{base}.obj"
+
+    with tempfile.TemporaryDirectory(prefix="osm2gazebo_") as tmpdir:
+        tmp_mesh = Path(tmpdir) / f"{base}.obj"
+        run_osm2world(osm_file, tmp_mesh)
+
+        # Move generated mesh next to the world under meshes/
+        shutil.move(tmp_mesh.as_posix(), mesh_path.as_posix())
+
+    # Use path relative to world file for portability
+    relative_mesh_uri = os.path.relpath(mesh_path.as_posix(), start=output_dir.as_posix())
+    write_world_file(output_world, relative_mesh_uri, scale)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Convert an OpenStreetMap (.osm) file into a Gazebo .world with a mesh generated by OSM2World.",
+    )
+    parser.add_argument("input_osm", help="Path to input .osm file")
+    parser.add_argument("output_world", help="Path to output .world file")
+    parser.add_argument(
+        "--scale",
+        type=float,
+        default=1.0,
+        help="Uniform scaling factor applied to the mesh in the world (default: 1.0)",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    colorama_init(autoreset=True)
+
+    args = parse_args()
+    input_osm = Path(args.input_osm).resolve()
+    output_world = Path(args.output_world).resolve()
+
+    print_info(f"Input: {input_osm}")
+    print_info(f"Output world: {output_world}")
+    print_info("Converting map…")
+
+    try:
+        convert(input_osm, output_world, args.scale)
+    except FileNotFoundError as e:
+        print_error(str(e))
+        return 2
+    except RuntimeError as e:
+        print_error(str(e))
+        return 3
+    except Exception as e:  # unexpected
+        print_error(f"Unexpected error: {e}")
+        return 4
+
+    print_success("Export completed.")
+    print_success(f"World written to: {output_world}")
+    print_success(f"Mesh stored under: {output_world.parent / 'meshes'}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+

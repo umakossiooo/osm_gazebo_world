@@ -1,0 +1,14 @@
+services:
+  osm2gazebo:
+    build: .
+    image: osm2gazebo:latest
+    container_name: osm2gazebo
+    working_dir: /app
+    volumes:
+      - ./maps:/maps
+      - .:/app
+    environment:
+      - OSM2WORLD_JAR=/opt/osm2world/OSM2World.jar
+    tty: true
+
+

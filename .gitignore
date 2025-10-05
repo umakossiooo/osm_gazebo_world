@@ -1,0 +1,72 @@
+# OSM and generated files
+*.osm
+maps/
+meshes/
+*.world
+
+# Large binary files and generated content
+*.obj
+*.dae
+*.gltf
+*.bin
+
+# Docker and build artifacts
+.docker/
+docker-compose.override.yml
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Large dependency libraries (already in Docker)
+lib/
+locales/
+models/
+
+# OSM2World specific
+osm2world/
+*.jar
+
+# Gazebo temporary files
+.gazebo/
+gazebo_models/
+
+# Build outputs
+build/
+dist/
+output/
