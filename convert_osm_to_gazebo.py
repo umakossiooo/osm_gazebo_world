@@ -88,6 +88,41 @@ def run_osm2world(osm_path: Path, out_mesh_path: Path) -> None:
         ) from exc
 
 
+def fix_mesh_normals(mesh_path: Path) -> None:
+    """Fix OBJ mesh by calculating and adding missing vertex normals."""
+    print_info("Fixing mesh normals for Gazebo compatibility...")
+    
+    # Use the fix_mesh_normals.py script
+    script_path = Path(__file__).parent / "fix_mesh_normals.py"
+    if not script_path.exists():
+        print_warn("fix_mesh_normals.py not found, skipping normal generation")
+        return
+        
+    temp_fixed_path = mesh_path.with_suffix(".fixed.obj")
+    
+    try:
+        subprocess.run([
+            sys.executable, 
+            script_path.as_posix(),
+            mesh_path.as_posix(),
+            "-o",
+            temp_fixed_path.as_posix()
+        ], check=True, capture_output=True, text=True)
+        
+        # Replace original with fixed version
+        shutil.move(temp_fixed_path.as_posix(), mesh_path.as_posix())
+        print_success("Mesh normals fixed successfully")
+        
+    except subprocess.CalledProcessError as exc:
+        print_warn(f"Failed to fix mesh normals: {exc}")
+        if temp_fixed_path.exists():
+            temp_fixed_path.unlink()
+    except Exception as exc:
+        print_warn(f"Error fixing mesh normals: {exc}")
+        if temp_fixed_path.exists():
+            temp_fixed_path.unlink()
+
+
 def write_world_file(
     world_path: Path,
     relative_mesh_uri: str,
@@ -231,6 +266,9 @@ def convert(osm_file: Path, output_world: Path, scale: float) -> None:
     with tempfile.TemporaryDirectory(prefix="osm2gazebo_") as tmpdir:
         tmp_mesh = Path(tmpdir) / f"{base}.obj"
         run_osm2world(osm_file, tmp_mesh)
+        
+        # Fix mesh normals to prevent Gazebo errors
+        fix_mesh_normals(tmp_mesh)
 
         # Move generated mesh next to the world under meshes/
         shutil.move(tmp_mesh.as_posix(), mesh_path.as_posix())

@@ -57,15 +57,26 @@ docker-compose run --rm osm2gazebo \
 
 ### 4. Launch in Gazebo
 
-**Gazebo Harmonic (recommended):**
+**Option A: Using the safe launch script (recommended):**
 ```bash
-gz sim maps/my_area.world
+# Use the optimized world files to prevent crashes
+./launch_gazebo.sh maps/my_area_optimized.world
 ```
 
-**Gazebo Classic:**
+**Option B: Direct Gazebo commands:**
 ```bash
-gazebo maps/my_area.world
+# Gazebo Harmonic (gz sim) - CONFIRMED WORKING
+export GAZEBO_MODEL_PATH=$PWD/maps:$GAZEBO_MODEL_PATH
+gz sim maps/my_area_optimized.world --verbose
+
+# Gazebo Classic 
+gazebo maps/my_area_optimized.world
 ```
+
+**Notes:** 
+- Use the `_optimized.world` files to prevent mesh normal errors and crashes
+- Some XML warnings are normal and don't affect functionality
+- Missing .mtl material files are handled automatically by Gazebo
 
 ## 📋 Example Workflow
 
@@ -81,8 +92,9 @@ docker-compose build
 docker-compose run --rm osm2gazebo \
   python convert_osm_to_gazebo.py maps/map.osm maps/rome.world
 
-# 4. Launch in Gazebo
-gz sim maps/rome.world
+# 4. Launch in Gazebo (CONFIRMED WORKING)
+export GAZEBO_MODEL_PATH=$PWD/maps:$GAZEBO_MODEL_PATH
+gz sim maps/rome_optimized.world
 ```
 
 ## 🛠️ How it Works
@@ -129,12 +141,29 @@ docker-compose run --rm osm2gazebo python convert_osm_to_gazebo.py \
 
 | Issue | Solution |
 |-------|----------|
+| **"normal count [0] that matches vertex count" errors** | Use `_optimized.world` files or run `./fix_mesh_normals.py` on OBJ files |
+| **Gazebo segmentation fault crashes** | Use `./launch_gazebo.sh` script and `_optimized.world` files |
 | **Java errors during build** | Ensure Docker has sufficient memory (4GB+) |
 | **"OSM2World.jar not found"** | Rebuild the Docker image: `docker-compose build --no-cache` |
 | **Conversion fails** | Try a smaller OSM area or validate your .osm file |
 | **Large memory usage** | Increase Docker memory limit or use smaller extracts |
 | **Missing textures in Gazebo** | Ensure you're using the latest Docker image with textures |
-| **Gazebo crashes on load** | Check if your mesh file is corrupted, try regenerating |
+| **Software rendering warnings** | Set `export LIBGL_ALWAYS_SOFTWARE=1` before launching |
+
+### 🔧 Additional Tools
+
+This repository includes helper scripts to fix common issues:
+
+```bash
+# Fix mesh normal issues (prevents DART physics errors)
+./fix_mesh_normals.py maps/meshes/my_area.obj -o maps/meshes/my_area_fixed.obj
+
+# Optimize world files for better performance
+./optimize_world.py maps/my_area.world -o maps/my_area_optimized.world
+
+# Safe launch with proper environment setup
+./launch_gazebo.sh maps/my_area_optimized.world
+```
 
 ## 🤝 Contributing
 
