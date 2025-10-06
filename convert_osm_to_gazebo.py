@@ -220,6 +220,8 @@ def write_world_file(
     <!-- OSM Environment Model -->
     <model name="osm_environment">
       <static>true</static>
+      <!-- Rotate mesh to horizontal orientation (OSM meshes are often vertical) -->
+      <pose>0 0 0 1.5708 0 0</pose>
       <link name="osm_mesh_link">
         <visual name="osm_visual">
           <geometry>
@@ -290,6 +292,16 @@ def parse_args() -> argparse.Namespace:
         default=1.0,
         help="Uniform scaling factor applied to the mesh in the world (default: 1.0)",
     )
+    parser.add_argument(
+        "--auto-optimize",
+        action="store_true",
+        help="Automatically create optimized version with fixed normals and performance settings",
+    )
+    parser.add_argument(
+        "--launch",
+        action="store_true", 
+        help="Automatically launch Gazebo after conversion (requires --auto-optimize)",
+    )
     return parser.parse_args()
 
 
@@ -319,6 +331,33 @@ def main() -> int:
     print_success("Export completed.")
     print_success(f"World written to: {output_world}")
     print_success(f"Mesh stored under: {output_world.parent / 'meshes'}")
+    
+    # Auto-optimization if requested
+    if args.auto_optimize:
+        print_info("Running auto-optimization...")
+        try:
+            script_dir = Path(__file__).parent
+            optimize_script = script_dir / "optimize_complete.py"
+            
+            if optimize_script.exists():
+                optimize_args = [output_world.as_posix()]
+                if args.launch:
+                    optimize_args.append("--launch")
+                    
+                subprocess.run([
+                    sys.executable,
+                    optimize_script.as_posix()
+                ] + optimize_args, check=True)
+                
+                print_success("Auto-optimization completed!")
+            else:
+                print_warn("optimize_complete.py not found, skipping auto-optimization")
+                
+        except subprocess.CalledProcessError as e:
+            print_error(f"Auto-optimization failed: {e}")
+        except Exception as e:
+            print_error(f"Unexpected error during auto-optimization: {e}")
+    
     return 0
 
 

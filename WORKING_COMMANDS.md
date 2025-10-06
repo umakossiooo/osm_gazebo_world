@@ -30,13 +30,16 @@ ls maps/meshes/
 
 ## Problemas Solucionados ✅
 
-1. **Error de normales**: `normal count [0] that matches vertex count`
+1. **Orientación vertical del mesh**: Mapa aparece rotado verticalmente
+   - ✅ **Solucionado**: Agregada rotación `<pose>0 0 0 1.5708 0 0</pose>` (90° roll)
+
+2. **Error de normales**: `normal count [0] that matches vertex count`
    - ✅ **Solucionado**: Usando archivos `_fixed.obj` que tienen normales calculadas
 
-2. **Segmentation fault**: Crashes del simulador
+3. **Segmentation fault**: Crashes del simulador
    - ✅ **Solucionado**: Usando archivos `_optimized.world` con configuración mejorada
 
-3. **Advertencias XML**: Elementos SDF no definidos
+4. **Advertencias XML**: Elementos SDF no definidos
    - ✅ **Normal**: Gazebo maneja estas advertencias automáticamente
 
 ## Warnings Normales (No son errores)
@@ -58,6 +61,9 @@ Warning [Utils.cc:132] XML Element[max_contacts], child of element[ode], not def
 
 # Optimizar archivos world
 ./optimize_world.py maps/mi_mundo.world -o maps/mi_mundo_optimized.world
+
+# Arreglar orientación del mesh (si aparece vertical)
+./fix_orientation.py maps/mi_mundo.world
 
 # Lanzamiento seguro con configuración de ambiente
 ./launch_gazebo.sh maps/mi_mundo_optimized.world
