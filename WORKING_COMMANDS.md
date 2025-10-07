@@ -1,77 +1,89 @@
-# Comandos Funcionando ✅
+# Working Commands ✅
 
-## Comando Principal (CONFIRMADO)
+## New Integrated Workflow (RECOMMENDED)
 
-Para ejecutar la simulación del mundo de Roma:
+The simplest way to create clean Gazebo worlds from OSM data:
 
 ```bash
-# Configurar el path de modelos
+# Create a clean Gazebo world with a single command
+./osm_to_gazebo.py maps/map.osm
+
+# Run Gazebo simulation with the optimized world
 export GAZEBO_MODEL_PATH=$PWD/maps:$GAZEBO_MODEL_PATH
-
-# Ejecutar Gazebo Sim con el mundo optimizado
-gz sim maps/rome_optimized.world --verbose
+gz sim maps/map/map_optimized.world --verbose
 ```
 
-## Archivos Disponibles
+## Available Files (After Running osm_to_gazebo.py)
 
 ```bash
-ls maps/
-# map.world                 - Mundo original
-# map_optimized.world       - Mundo optimizado (RECOMENDADO)
-# rome.world                - Mundo de Roma original  
-# rome_optimized.world      - Mundo de Roma optimizado (RECOMENDADO)
+ls maps/your_map/
+# your_map_cleaned.osm      - Cleaned OSM data with GDAL/OGR
+# your_map.world            - Original Gazebo world
+# your_map_optimized.world  - Optimized Gazebo world (RECOMMENDED)
 
-ls maps/meshes/
-# map.obj                   - Mesh original (SIN normales)
-# map_fixed.obj            - Mesh con normales (FUNCIONA)
-# rome.obj                 - Mesh Roma original (SIN normales)
-# rome_fixed.obj           - Mesh Roma con normales (FUNCIONA)
+ls maps/your_map/meshes/
+# your_map.obj              - Original mesh (without normals)
+# your_map_fixed.obj        - Fixed mesh with normals (WORKS)
 ```
 
-## Problemas Solucionados ✅
+## Fixed Problems ✅
 
-1. **Orientación vertical del mesh**: Mapa aparece rotado verticalmente
-   - ✅ **Solucionado**: Agregada rotación `<pose>0 0 0 1.5708 0 0</pose>` (90° roll)
+1. **OSM Geometry Issues**: Self-intersecting polygons, unclosed ways
+   - ✅ **Fixed**: Using GDAL/OGR data cleaning in new integrated workflow
 
-2. **Error de normales**: `normal count [0] that matches vertex count`
-   - ✅ **Solucionado**: Usando archivos `_fixed.obj` que tienen normales calculadas
+2. **Vertical Mesh Orientation**: Map appears rotated vertically
+   - ✅ **Fixed**: Added rotation `<pose>0 0 0 1.5708 0 0</pose>` (90° roll)
 
-3. **Segmentation fault**: Crashes del simulador
-   - ✅ **Solucionado**: Usando archivos `_optimized.world` con configuración mejorada
+3. **Normal Count Error**: `normal count [0] that matches vertex count`
+   - ✅ **Fixed**: Using `_fixed.obj` files with calculated normals
 
-4. **Advertencias XML**: Elementos SDF no definidos
-   - ✅ **Normal**: Gazebo maneja estas advertencias automáticamente
+4. **Segmentation Fault**: Simulator crashes
+   - ✅ **Fixed**: Using `_optimized.world` with improved configuration
 
-## Warnings Normales (No son errores)
+5. **XML Warnings**: Undefined SDF elements
+   - ✅ **Normal**: Gazebo handles these warnings automatically
 
-Estos warnings son esperados y NO afectan el funcionamiento:
+## Expected Warnings (Not Errors)
+
+These warnings are expected and DO NOT affect functionality:
 
 ```
 Warning [Utils.cc:132] XML Element[gravity], child of element[physics], not defined in SDF
 Warning [Utils.cc:132] XML Element[max_contacts], child of element[ode], not defined in SDF  
-[GUI] [Wrn] Material file [/home/studente/osm_world/maps/meshes/rome.obj.mtl] not found
+[GUI] [Wrn] Material file [maps/meshes/your_map.obj.mtl] not found
 [GUI] [Wrn] Missing material for shape[SurfaceArea] in OBJ file
 ```
 
-## Scripts Disponibles
+## Available Scripts
 
 ```bash
-# Arreglar normales de meshes
-./fix_mesh_normals.py maps/meshes/mi_mesh.obj -o maps/meshes/mi_mesh_fixed.obj
+# Integrated workflow (one command does it all - RECOMMENDED)
+./osm_to_gazebo.py maps/input.osm [--output maps/custom_dir] [--scale 0.5] [--launch]
 
-# Optimizar archivos world
-./optimize_world.py maps/mi_mundo.world -o maps/mi_mundo_optimized.world
+# Clean OSM data with GDAL/OGR
+./clean_osm_data.py maps/input.osm maps/output_cleaned.osm
 
-# Arreglar orientación del mesh (si aparece vertical)
-./fix_orientation.py maps/mi_mundo.world
+# Convert OSM to Gazebo world
+./convert_osm_to_gazebo.py maps/input.osm maps/output.world --auto-optimize
 
-# Lanzamiento seguro con configuración de ambiente
-./launch_gazebo.sh maps/mi_mundo_optimized.world
+# Fix mesh normals
+./fix_mesh_normals.py maps/meshes/input.obj -o maps/meshes/output_fixed.obj
+
+# Optimize world files
+./optimize_world.py maps/input.world -o maps/input_optimized.world
+
+# Fix mesh orientation
+./fix_orientation.py maps/input.world
+
+# Launch Gazebo with environment setup
+./launch_gazebo.sh maps/input_optimized.world
 ```
 
-## Estado Actual
+## Current Status
 
-- ✅ **Gazebo Sim funcionando** con `gz sim maps/rome_optimized.world`
-- ✅ **Meshes con normales** generadas correctamente  
-- ✅ **Mundos optimizados** para mejor rendimiento
-- ✅ **Scripts de ayuda** disponibles para troubleshooting
+- ✅ **Integrated Workflow** creates clean worlds with a single command
+- ✅ **GDAL/OGR Integration** fixes geometry issues before processing
+- ✅ **Gazebo Sim Working** with `gz sim maps/your_map/your_map_optimized.world`
+- ✅ **Meshes With Normals** generated correctly
+- ✅ **Optimized Worlds** for better performance
+- ✅ **Helper Scripts** available for troubleshooting

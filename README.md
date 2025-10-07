@@ -1,89 +1,82 @@
 # OSM to Gazebo World Converter
 
-**Convert real-world OpenStreetMap data into 3D Gazebo simulation environments in minutes.**
-
-Perfect for robotics research, autonomous vehicle testing, and urban simulation with realistic buildings, roads, and physics.
+This tool converts OpenStreetMap (.osm) files to Gazebo (.world) files, ready for simulation.
 
 ## Quick Start
 
 ```bash
-# 1. Setup (one time)
-git clone https://github.com/umakossiooo/osm_gazebo_world.git
-cd osm_gazebo_world && docker-compose build
+# One-step command: convert OSM file and launch Gazebo
+./osm2gazebo.sh maps/roma/map.osm
 
-# 2. Convert OSM → Gazebo  
-docker-compose run --rm osm2gazebo \
-  python convert_osm_to_gazebo.py maps/map.osm maps/output.world --auto-optimize
+# For complex OSM files with geometry issues, use simple mode
+./osm2gazebo.sh maps/roma/map.osm --simple
 
-# 3. Launch 3D simulation with Gazebo Garden
-export GAZEBO_MODEL_PATH=$PWD/maps:$GAZEBO_MODEL_PATH
-gz sim maps/output_optimized.world  # Use the local path, not the Docker path
+# OR use the separate commands:
+# 1. Convert an OSM file to a Gazebo world
+./convert.sh maps/roma/map.osm
+
+# 2. Launch the world in Gazebo
+./launch.sh maps/roma/map_optimized.world
 ```
 
-**Done!** Real-world 3D environment from map data.
+## Requirements
 
-## Getting Your Own Map Data
+- Docker and docker-compose
+- Gazebo Garden (for visualization)
 
-1. **Download from OpenStreetMap**: Go to [openstreetmap.org](https://www.openstreetmap.org) → Export → Select area → Export
-2. **Use included samples**: Sample maps are included in the `maps` directory
+## Installation
 
-## Advanced Usage
+All dependencies are handled by Docker, so you only need:
 
 ```bash
-# Custom scaling (0.5 = half size) 
---scale 0.5
-
-# Auto-optimize (recommended for large maps)
---auto-optimize
-
-# Auto-launch after conversion
---auto-optimize --launch
-
-# Fix existing worlds
-./optimize_complete.py maps/my_area.world
+# Install Docker if needed
+sudo apt update
+sudo apt install -y docker.io docker-compose
 ```
 
-## Common Issues
+## Usage
 
-**Problem: Gazebo crashes or mesh errors?**  
-→ Use `--auto-optimize` flag or run `./optimize_complete.py maps/your_world.world`
+### 1. Preparing OSM Data
 
-**Problem: Map appears vertical?**  
-→ Fixed automatically with `--auto-optimize` or use `./fix_orientation.py`
+Download OSM data from [OpenStreetMap](https://www.openstreetmap.org/export) or [GEOFABRIK](https://download.geofabrik.de/):
+1. Go to your area of interest
+2. Export as .osm file
+3. Save it to the maps/ directory
 
-**Problem: Docker build fails?**  
-→ Increase Docker memory to 4GB+ and run `docker-compose build --no-cache`
-
-## Working with Gazebo Garden
-
-This project has been updated to work with Gazebo Garden. To use with Gazebo Garden:
+### 2. Converting OSM to Gazebo
 
 ```bash
-# Set environment variables
-export GAZEBO_MODEL_PATH=$PWD/maps:$GAZEBO_MODEL_PATH
-
-# Run simulation with Garden (use local path, not Docker container path)
-gz sim maps/your_map_optimized.world --verbose
-
-# IMPORTANT: When running after Docker conversion, use the local path
-# CORRECT:   gz sim maps/roma/map_optimized.world
-# INCORRECT: gz sim /app/maps/roma/map_optimized.world
+./convert.sh maps/roma/map.osm [scale]
 ```
 
-## Features
+Parameters:
+- `maps/roma/map.osm`: Path to the OSM file (must start with 'maps/')
+- `scale` (optional): Scale factor for the model (default: 1.0)
+- `--simple` (optional): Use simple mode with fewer details to avoid geometry errors in complex OSM files
+- `scale`: Optional scale factor (default: 1.0)
 
-- **Realistic buildings** with textures and materials
-- **Detailed roads** with proper markings  
-- **Traffic infrastructure** and signage
-- **Vegetation** and green spaces
-- **Physics simulation** ready for robots and vehicles
+### 3. Launching the World
 
-## Links
+```bash
+./launch.sh maps/roma/map_optimized.world
+```
 
-- [Get OSM Data](https://www.openstreetmap.org)
-- [Gazebo Documentation](https://gazebosim.org)
+### All-in-One Command
 
----
-*Converts real-world map data into 3D simulation environments for robotics research and autonomous vehicle testing*
+```bash
+./osm2gazebo.sh maps/roma/map.osm
+```
 
+This will convert the OSM file and immediately launch Gazebo with the resulting world.
 
+## Troubleshooting
+
+**Gazebo crashes or has rendering issues:**
+- The launch script automatically detects and handles software rendering.
+- For large maps, try using a smaller scale factor: `./convert.sh maps/your-map.osm 0.5`
+
+**"OSM2World.jar not found" error:**
+- The Docker container has it preinstalled, so make sure you're using the convert.sh script.
+
+**"Fuel world download failed" warnings:**
+- These warnings are normal and can be ignored - the world will still load.

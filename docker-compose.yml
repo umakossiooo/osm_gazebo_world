@@ -10,6 +10,7 @@ services:
     environment:
       - OSM2WORLD_JAR=/opt/osm2world/OSM2World.jar
       - GAZEBO_MODEL_PATH=/maps:/usr/share/gazebo-11/models
+      - JAVA_TOOL_OPTIONS=-Djava.awt.headless=true
     tty: true
     
   # Development environment with Gazebo Garden
@@ -27,6 +28,7 @@ services:
       - DISPLAY=${DISPLAY}
       - GAZEBO_MODEL_PATH=/maps:/usr/share/gz/models
       - GZ_SIM_RESOURCE_PATH=/maps:/usr/share/gz/models
+      - JAVA_TOOL_OPTIONS=-Djava.awt.headless=true
     tty: true
 
 

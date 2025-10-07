@@ -79,16 +79,33 @@ def run_osm2world(osm_path: Path, out_mesh_path: Path) -> None:
         classpath_parts.extend([jar.as_posix() for jar in lib_dir.glob("*.jar")])
     classpath = ":".join(classpath_parts)
     
-    java_cmd = [
-        "java",
-        "-cp",
-        classpath,
-        "org.osm2world.console.OSM2World",
-        "-i",
-        osm_path.as_posix(),
-        "-o",
-        out_mesh_path.as_posix(),
-    ]
+    # Use headless wrapper if available, otherwise fall back to direct java call
+    headless_script = Path(__file__).parent / "osm2world_headless.sh"
+    if headless_script.exists() and os.access(headless_script, os.X_OK):
+        java_cmd = [
+            headless_script.as_posix(),
+            "-cp",
+            classpath,
+            "org.osm2world.console.OSM2World",
+            "-i",
+            osm_path.as_posix(),
+            "-o",
+            out_mesh_path.as_posix(),
+        ]
+    else:
+        java_cmd = [
+            "java",
+            "-Djava.awt.headless=true",  # Add headless mode directly
+            "-Dorg.osm2world.skipNonCriticalExceptions=true",  # Skip non-critical exceptions
+            "-Dorg.osm2world.faultTolerance=true",  # Be more fault tolerant
+            "-cp",
+            classpath,
+            "org.osm2world.console.OSM2World",
+            "-i",
+            osm_path.as_posix(),
+            "-o",
+            out_mesh_path.as_posix(),
+        ]
     print_info("Running OSM2World to generate mesh (this may take a while)...")
     try:
         subprocess.run(java_cmd, check=True)
@@ -310,6 +327,11 @@ def parse_args() -> argparse.Namespace:
         "--auto-optimize",
         action="store_true",
         help="Automatically create optimized version with fixed normals and performance settings",
+    )
+    parser.add_argument(
+        "--simple",
+        action="store_true",
+        help="Use simple mode with fewer details to avoid geometry errors in complex OSM files",
     )
     parser.add_argument(
         "--launch",

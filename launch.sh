@@ -55,9 +55,13 @@ fi
 
 print_info "World file: $WORLD_FILE"
 
+# Get the directory containing the world file and its parent directory
+WORLD_DIR=$(dirname "$(realpath "$WORLD_FILE")")
+MAPS_DIR="$PWD/maps"
+
 # Set environment variables for better compatibility
-export GAZEBO_MODEL_PATH="$PWD/maps:$GAZEBO_MODEL_PATH"
-export GAZEBO_RESOURCE_PATH="$PWD/maps:$GAZEBO_RESOURCE_PATH"
+export GAZEBO_MODEL_PATH="$MAPS_DIR:$WORLD_DIR:$GAZEBO_MODEL_PATH"
+export GAZEBO_RESOURCE_PATH="$MAPS_DIR:$WORLD_DIR:$GAZEBO_RESOURCE_PATH"
 
 # Check for GPU/graphics issues and set software rendering if needed
 if [ "$LIBGL_ALWAYS_SOFTWARE" != "1" ]; then
