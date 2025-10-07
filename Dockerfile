@@ -11,7 +11,8 @@ RUN apt-get update && \
         curl \
         unzip \
         git \
-        jq && \
+        jq \
+        python3-numpy && \
     rm -rf /var/lib/apt/lists/* && \
     update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
     python --version && java -version
@@ -21,7 +22,8 @@ RUN python -m pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
       colorama \
       shapely \
-      osmium
+      osmium \
+      numpy
 
 # OSM2World setup - expects jar to be copied during build
 RUN mkdir -p /opt/osm2world

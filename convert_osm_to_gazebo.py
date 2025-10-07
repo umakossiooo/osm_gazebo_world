@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+OSM to Gazebo World Converter - Convert OpenStreetMap data to 3D Gazebo worlds
+Works with both Gazebo Garden (gz sim) and classic Gazebo
+"""
+
 import argparse
 import os
 import shutil
@@ -7,33 +12,42 @@ import sys
 import tempfile
 from pathlib import Path
 
+# Import utility functions
 try:
-    from colorama import Fore, Style, init as colorama_init
-except Exception:  # pragma: no cover - color is optional
-    class _Dummy:
-        def __getattr__(self, name):
-            return ""
-
-    def colorama_init(*_args, **_kwargs):
-        return None
-
-    Fore = Style = _Dummy()  # type: ignore
-
-
-def print_info(message: str) -> None:
-    print(f"{Fore.CYAN}[INFO]{Style.RESET_ALL} {message}")
-
-
-def print_success(message: str) -> None:
-    print(f"{Fore.GREEN}[OK]{Style.RESET_ALL} {message}")
-
-
-def print_warn(message: str) -> None:
-    print(f"{Fore.YELLOW}[WARN]{Style.RESET_ALL} {message}")
-
-
-def print_error(message: str) -> None:
-    print(f"{Fore.RED}[ERROR]{Style.RESET_ALL} {message}", file=sys.stderr)
+    from utils import (
+        print_info, print_success, print_warn, print_error,
+        ensure_osm2world_path, run_script, run_process
+    )
+except ImportError:
+    # Fallback if utils.py is not available
+    try:
+        from colorama import Fore, Style, init as colorama_init
+        colorama_init(autoreset=True)
+    except ImportError:  # pragma: no cover - color is optional
+        class _Dummy:
+            def __getattr__(self, name):
+                return ""
+    
+        def colorama_init(*_args, **_kwargs):
+            return None
+    
+        Fore = Style = _Dummy()  # type: ignore
+    
+    
+    def print_info(message: str) -> None:
+        print(f"{Fore.BLUE}[INFO]{Style.RESET_ALL} {message}")
+    
+    
+    def print_success(message: str) -> None:
+        print(f"{Fore.GREEN}[OK]{Style.RESET_ALL} {message}")
+    
+    
+    def print_warn(message: str) -> None:
+        print(f"{Fore.YELLOW}[WARN]{Style.RESET_ALL} {message}")
+    
+    
+    def print_error(message: str) -> None:
+        print(f"{Fore.RED}[ERROR]{Style.RESET_ALL} {message}", file=sys.stderr)
 
 
 def ensure_osm2world_path() -> Path:
@@ -306,7 +320,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    colorama_init(autoreset=True)
+    # We'll skip colorama initialization here since it should be handled
+    # in the imports or utils.py if available
 
     args = parse_args()
     input_osm = Path(args.input_osm).resolve()

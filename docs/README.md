@@ -1,8 +1,6 @@
 # OSM to Gazebo World Converter
 
-**Convert real-world OpenStreetMap data into 3D Gazebo simulation environments in minutes.**
-
-Perfect for robotics research, autonomous vehicle testing, and urban simulation with realistic buildings, roads, and physics.
+**Convert real-world OpenStreetMap data into 3D Gazebo simulation environments for robotics research and autonomous vehicle testing.**
 
 ## Quick Start
 
@@ -17,10 +15,8 @@ docker-compose run --rm osm2gazebo \
 
 # 3. Launch 3D simulation with Gazebo Garden
 export GAZEBO_MODEL_PATH=$PWD/maps:$GAZEBO_MODEL_PATH
-gz sim maps/output_optimized.world  # Use the local path, not the Docker path
+gz sim maps/output_optimized.world
 ```
-
-**Done!** Real-world 3D environment from map data.
 
 ## Getting Your Own Map Data
 
@@ -43,47 +39,36 @@ gz sim maps/output_optimized.world  # Use the local path, not the Docker path
 ./optimize_complete.py maps/my_area.world
 ```
 
-## Common Issues
+## Common Issues & Troubleshooting
 
-**Problem: Gazebo crashes or mesh errors?**  
+### Mesh Errors
+If you see errors like: `One of the submeshes does not have a normal count [0] that matches its vertex count`
 → Use `--auto-optimize` flag or run `./optimize_complete.py maps/your_world.world`
 
-**Problem: Map appears vertical?**  
+### Map Appears Vertical
 → Fixed automatically with `--auto-optimize` or use `./fix_orientation.py`
 
-**Problem: Docker build fails?**  
+### Docker Build Issues
 → Increase Docker memory to 4GB+ and run `docker-compose build --no-cache`
 
-## Working with Gazebo Garden
+## Working Commands
 
-This project has been updated to work with Gazebo Garden. To use with Gazebo Garden:
-
+For Gazebo Garden:
 ```bash
 # Set environment variables
 export GAZEBO_MODEL_PATH=$PWD/maps:$GAZEBO_MODEL_PATH
 
-# Run simulation with Garden (use local path, not Docker container path)
+# Run simulation
 gz sim maps/your_map_optimized.world --verbose
-
-# IMPORTANT: When running after Docker conversion, use the local path
-# CORRECT:   gz sim maps/roma/map_optimized.world
-# INCORRECT: gz sim /app/maps/roma/map_optimized.world
 ```
 
 ## Features
 
-- **Realistic buildings** with textures and materials
-- **Detailed roads** with proper markings  
-- **Traffic infrastructure** and signage
-- **Vegetation** and green spaces
-- **Physics simulation** ready for robots and vehicles
-
-## Links
-
-- [Get OSM Data](https://www.openstreetmap.org)
-- [Gazebo Documentation](https://gazebosim.org)
+- 🏢 **Realistic buildings** with textures
+- 🛣️ **Detailed roads** with markings  
+- 🚦 **Traffic infrastructure** and signage
+- 🌳 **Vegetation** and green spaces
+- ⚡ **Physics simulation** ready for robots
 
 ---
-*Converts real-world map data into 3D simulation environments for robotics research and autonomous vehicle testing*
-
-
+*Project optimized for Gazebo Garden (Gazebo Sim) usage.*

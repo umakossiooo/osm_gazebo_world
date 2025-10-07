@@ -104,9 +104,17 @@ if [ "$AVAILABLE_MEM" -lt 2048 ]; then
     print_warn "Consider closing other applications or using a smaller OSM area."
 fi
 
-# Launch Gazebo with the world
-print_info "Launching Gazebo..."
-print_info "Command: gazebo \"$WORLD_FILE\" $*"
-
-# Use exec to replace the shell process with gazebo
-exec gazebo "$WORLD_FILE" "$@"
+# Check if we should use Gazebo Garden or Classic
+if command -v gz >/dev/null 2>&1; then
+    print_info "Using Gazebo Garden (gz sim)..."
+    print_info "Command: gz sim \"$WORLD_FILE\" $*"
+    
+    # Launch Gazebo Garden
+    exec gz sim "$WORLD_FILE" "$@"
+else
+    print_info "Using Gazebo Classic..."
+    print_info "Command: gazebo \"$WORLD_FILE\" $*"
+    
+    # Use exec to replace the shell process with gazebo
+    exec gazebo "$WORLD_FILE" "$@"
+fi
