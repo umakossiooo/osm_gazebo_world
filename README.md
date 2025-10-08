@@ -22,7 +22,7 @@ This tool converts OpenStreetMap (.osm) files to Gazebo (.world) files, ready fo
 ## Requirements
 
 - Docker and docker-compose
-- Gazebo Garden (for visualization)
+- Gazebo Harmonic (for visualization)
 
 ## Installation
 

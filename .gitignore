@@ -70,4 +70,4 @@ gazebo_models/
 # Build outputs
 build/
 dist/
-output/
+output/*Zone.Identifier*

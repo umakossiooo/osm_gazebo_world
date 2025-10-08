@@ -1,12 +1,12 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
-# Install Python 3.10, Java (for OSM2World), and system dependencies
+# Install Python 3.12, Java (for OSM2World), and system dependencies
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3 \
         python3-pip \
         python3-venv \
-        openjdk-17-jre-headless \
+        openjdk-21-jre-headless \
         ca-certificates \
         curl \
         unzip \
@@ -30,8 +30,7 @@ RUN apt-get update && \
 ENV JAVA_TOOL_OPTIONS="-Djava.awt.headless=true"
 
 # Python dependencies
-RUN python -m pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir \
+RUN pip install --no-cache-dir --break-system-packages \
       colorama \
       shapely \
       osmium \
